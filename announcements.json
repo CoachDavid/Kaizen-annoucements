@@ -1,0 +1,18 @@
+[
+    {
+      "id": "cancellation-2026-11-01",
+      "message": "❌ Tonight's class is CANCELLED due to snow",
+      "expires": "2026-11-01",
+      "cancels": true
+    },
+   {
+    "message": "📢 Youth Belt testing this Sunday at 12pm",
+    "expires": "2026-11-08",
+    "id": "announcement-2026-11-05"
+   },
+   {
+    "message": "📢 Adult Belt testing this Monday at 7:30pm",
+    "expires": "2026-11-09",
+    "id": "announcement-2026-11-06"
+   }
+]
