@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kaizen Admin</title>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --fg: #1a1a1a;
+    --fg-muted: #666;
+    --border: #e0ddd8;
+    --accent: #c8392b;
+    --accent-fg: #ffffff;
+    --success: #2e7d32;
+    --warning: #e65100;
+    --tag-active: #e8f5e9;
+    --tag-active-fg: #2e7d32;
+    --tag-expired: #fbe9e7;
+    --tag-expired-fg: #bf360c;
+    --tag-cancels: #fff3e0;
+    --tag-cancels-fg: #e65100;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    --radius: 10px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1918;
+      --surface: #252322;
+      --fg: #f0ede8;
+      --fg-muted: #9e9b96;
+      --border: #363330;
+      --accent: #e05545;
+      --tag-active: #1b3a1e;
+      --tag-active-fg: #81c784;
+      --tag-expired: #3a1a16;
+      --tag-expired-fg: #ef9a9a;
+      --tag-cancels: #3a2800;
+      --tag-cancels-fg: #ffb74d;
+      --shadow: 0 1px 4px rgba(0,0,0,0.3);
+      color-scheme: dark;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px;
+    min-height: 100vh;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .header-icon { font-size: 28px; line-height: 1; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .subtitle { font-size: 13px; color: var(--fg-muted); }
+
+  #auth-screen {
+    max-width: 360px;
+    margin: 60px auto 0;
+    text-align: center;
+  }
+  #auth-screen h2 { font-size: 18px; margin-bottom: 8px; }
+  #auth-screen p { color: var(--fg-muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .announcement-row { display: flex; flex-direction: column; gap: 8px; }
+  .announcement-message { font-size: 15px; font-weight: 500; line-height: 1.4; }
+  .announcement-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .tag-active { background: var(--tag-active); color: var(--tag-active-fg); }
+  .tag-expired { background: var(--tag-expired); color: var(--tag-expired-fg); }
+  .tag-cancels { background: var(--tag-cancels); color: var(--tag-cancels-fg); }
+  .tag-expires { background: var(--border); color: var(--fg-muted); }
+  .row-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 8px 14px;
+    transition: opacity 0.15s;
+  }
+  button:active { opacity: 0.75; }
+  .btn-primary { background: var(--accent); color: var(--accent-fg); }
+  .btn-secondary { background: var(--border); color: var(--fg); }
+  .btn-danger { background: var(--tag-expired); color: var(--tag-expired-fg); }
+  .btn-full { width: 100%; padding: 12px; font-size: 16px; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--fg-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  input[type="text"], input[type="date"], input[type="password"], textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 80px; resize: vertical; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+  .toggle-label { font-size: 15px; }
+  .toggle-desc { font-size: 13px; color: var(--fg-muted); }
+
+  .toggle { position: relative; width: 50px; height: 30px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 15px; transition: background 0.2s; }
+  .toggle input:checked + .toggle-track { background: var(--success); }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; background: white; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: left 0.2s; }
+  .toggle input:checked ~ .toggle-thumb { left: 23px; }
+
+  #toast {
+    position: fixed;
+    bottom: max(24px, env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a1a;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--fg-muted); }
+
+  .empty-state { text-align: center; padding: 32px 0; color: var(--fg-muted); font-size: 15px; }
+
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 50;
+    align-items: flex-end;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal-sheet {
+    background: var(--surface);
+    border-radius: 16px 16px 0 0;
+    padding: 20px max(16px, env(safe-area-inset-right, 0px)) max(32px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 18px; font-weight: 700; }
+  .modal-cancel { background: none; color: var(--accent); font-size: 16px; padding: 4px 0; }
+
+  #status-bar { font-size: 13px; color: var(--fg-muted); text-align: center; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div style="font-size:48px;margin-bottom:16px;">🥋</div>
+  <h2>Kaizen Announcements</h2>
+  <p>Admin access only</p>
+  <div class="form-group">
+    <input type="password" id="pin-input" placeholder="Enter PIN" style="text-align:center;font-size:20px;letter-spacing:4px;">
+  </div>
+  <button class="btn-primary btn-full" onclick="checkPin()">Unlock</button>
+  <p style="font-size:12px;color:var(--fg-muted);margin-top:16px;" id="auth-error"></p>
+</div>
+
+<div id="token-screen" style="display:none;max-width:360px;margin:40px auto 0;text-align:center;">
+  <div style="font-size:48px;margin-bottom:16px;">🔑</div>
+  <h2 style="font-size:18px;margin-bottom:8px;">One-time Setup</h2>
+  <p style="color:var(--fg-muted);font-size:14px;margin-bottom:24px;">Enter your Cloudflare API token. It will be saved only on this device.</p>
+  <div class="form-group">
+    <input type="password" id="token-input" placeholder="cfut_..." style="font-size:13px;">
+  </div>
+  <button class="btn-primary btn-full" onclick="saveTokenAndContinue()">Save Token</button>
+  <p style="font-size:12px;color:var(--fg-muted);margin-top:16px;">Find your token in Cloudflare dashboard → My Profile → API Tokens</p>
+</div>
+
+<div id="main-app" style="display:none;">
+  <div class="header">
+    <div class="header-icon">📢</div>
+    <div>
+      <h1>Announcements</h1>
+      <div class="subtitle">Kaizen Karate</div>
+    </div>
+  </div>
+
+  <div id="status-bar">Loading…</div>
+
+  <div class="section-header">
+    <span class="section-title">Current Messages</span>
+    <button class="btn-primary btn-sm" onclick="openAddModal()">+ Add</button>
+  </div>
+
+  <div id="announcements-list">
+    <div class="empty-state">No announcements</div>
+  </div>
+</div>
+
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">New Announcement</span>
+      <button class="modal-cancel" onclick="closeModalDirect()">Cancel</button>
+    </div>
+    <input type="hidden" id="edit-index" value="-1">
+    <div class="form-group">
+      <label>Message</label>
+      <textarea id="field-message" placeholder="📢 Dojo closed for Thanksgiving"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Expiry Date</label>
+      <input type="date" id="field-expires">
+    </div>
+    <div class="form-group">
+      <label>ID (auto-generated)</label>
+      <input type="text" id="field-id" placeholder="auto">
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">❌ Cancels Class Today</div>
+          <div class="toggle-desc">Suppresses class reminder in ticker</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="field-cancels">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+    </div>
+    <button class="btn-primary btn-full" onclick="saveAnnouncement()">Save & Deploy</button>
+  </div>
+</div>
+
+<div id="toast">Saved!</div>
+
+<script>
+  const ADMIN_PIN = "kaizen";
+  const CF_ACCOUNT = "7590a27069587170fd744448b0504510";
+  const CF_WORKER  = "kaizen-announcements";
+  const WORKER_URL = "https://kaizen-announcements.trihard.workers.dev";
+  const API_BASE   = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/workers/scripts/${CF_WORKER}`;
+
+  // Token stored only in localStorage on this device — never in the file
+  function getToken() { try { return localStorage.getItem('cf_token') || ''; } catch(e) { return ''; } }
+  function saveToken(t) { try { localStorage.setItem('cf_token', t); } catch(e) {} }
+
+  let announcements = [];
+
+  function checkPin() {
+    const val = document.getElementById('pin-input').value;
+    if (val === ADMIN_PIN) {
+      document.getElementById('auth-screen').style.display = 'none';
+      // If no token saved yet, show token setup screen
+      if (!getToken()) {
+        document.getElementById('token-screen').style.display = 'block';
+      } else {
+        document.getElementById('main-app').style.display = 'block';
+        loadAnnouncements();
+      }
+    } else {
+      document.getElementById('auth-error').textContent = 'Incorrect PIN';
+    }
+  }
+
+  function saveTokenAndContinue() {
+    const t = document.getElementById('token-input').value.trim();
+    if (!t) { alert('Please enter your Cloudflare API token'); return; }
+    saveToken(t);
+    document.getElementById('token-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    loadAnnouncements();
+  }
+  document.getElementById('pin-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPin();
+  });
+
+  async function loadAnnouncements() {
+    setStatus('Fetching…');
+    try {
+      const r = await fetch(WORKER_URL + '?nocache=' + Date.now());
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      announcements = await r.json();
+      renderList();
+      setStatus('Last loaded: ' + new Date().toLocaleTimeString());
+    } catch(e) {
+      setStatus('⚠️ Could not load: ' + e.message);
+    }
+  }
+
+  function setStatus(msg) {
+    document.getElementById('status-bar').textContent = msg;
+  }
+
+  function isExpired(expires) {
+    if (!expires) return false;
+    const today = new Date(); today.setHours(0,0,0,0);
+    return new Date(expires + 'T00:00:00') < today;
+  }
+
+  function renderList() {
+    const list = document.getElementById('announcements-list');
+    if (!announcements.length) {
+      list.innerHTML = '<div class="empty-state">No announcements</div>';
+      return;
+    }
+    list.innerHTML = announcements.map((a, i) => {
+      const expired = isExpired(a.expires);
+      const statusTag = expired
+        ? '<span class="tag tag-expired">Expired</span>'
+        : '<span class="tag tag-active">Active</span>';
+      const cancelsTag = a.cancels ? '<span class="tag tag-cancels">Cancels Class</span>' : '';
+      const expiresTag = a.expires ? `<span class="tag tag-expires">Expires ${a.expires}</span>` : '<span class="tag tag-expires">No expiry</span>';
+      return `<div class="card">
+        <div class="announcement-row">
+          <div class="announcement-message">${escHtml(a.message)}</div>
+          <div class="announcement-meta">${statusTag}${cancelsTag}${expiresTag}</div>
+          <div class="row-actions">
+            <button class="btn-secondary btn-sm" onclick="openEditModal(${i})">Edit</button>
+            <button class="btn-danger btn-sm" onclick="deleteAnnouncement(${i})">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function openAddModal() {
+    document.getElementById('modal-title').textContent = 'New Announcement';
+    document.getElementById('edit-index').value = -1;
+    document.getElementById('field-message').value = '';
+    const d = new Date(); d.setDate(d.getDate() + 7);
+    document.getElementById('field-expires').value = d.toISOString().slice(0,10);
+    document.getElementById('field-id').value = 'announcement-' + Date.now();
+    document.getElementById('field-cancels').checked = false;
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('field-message').focus(), 100);
+  }
+
+  function openEditModal(i) {
+    const a = announcements[i];
+    document.getElementById('modal-title').textContent = 'Edit Announcement';
+    document.getElementById('edit-index').value = i;
+    document.getElementById('field-message').value = a.message;
+    document.getElementById('field-expires').value = a.expires || '';
+    document.getElementById('field-id').value = a.id;
+    document.getElementById('field-cancels').checked = !!a.cancels;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModalDirect();
+  }
+  function closeModalDirect() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  function saveAnnouncement() {
+    const msg = document.getElementById('field-message').value.trim();
+    if (!msg) { alert('Message is required'); return; }
+    const entry = {
+      id: document.getElementById('field-id').value || ('announcement-' + Date.now()),
+      message: msg,
+      expires: document.getElementById('field-expires').value || undefined,
+      cancels: document.getElementById('field-cancels').checked || undefined,
+    };
+    if (!entry.expires) delete entry.expires;
+    if (!entry.cancels) delete entry.cancels;
+    const idx = parseInt(document.getElementById('edit-index').value);
+    if (idx >= 0) { announcements[idx] = entry; } else { announcements.push(entry); }
+    closeModalDirect();
+    deployWorker();
+  }
+
+  function deleteAnnouncement(i) {
+    if (!confirm('Delete this announcement?')) return;
+    announcements.splice(i, 1);
+    deployWorker();
+  }
+
+  async function deployWorker() {
+    setStatus('Deploying…');
+    renderList();
+    const json = JSON.stringify(announcements, null, 2);
+    const workerCode = `// Auto-generated by Kaizen Admin
+const ANNOUNCEMENTS = ${json};
+export default {
+  async fetch(request) {
+    return new Response(JSON.stringify(ANNOUNCEMENTS), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+    });
+  }
+};`;
+    try {
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({
+        main_module: "worker.js",
+        compatibility_date: "2024-01-01"
+      })], { type: 'application/json' }), 'metadata.json');
+      form.append('worker.js', new Blob([workerCode], { type: 'application/javascript+module' }), 'worker.js');
+      const r = await fetch(API_BASE, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: form,
+      });
+      const result = await r.json();
+      if (result.success) {
+        showToast('✅ Deployed!');
+        setStatus('Deployed: ' + new Date().toLocaleTimeString());
+      } else {
+        const err = result.errors?.[0]?.message || 'Unknown error';
+        showToast('⚠️ ' + err);
+        setStatus('Deploy failed: ' + err);
+      }
+    } catch(e) {
+      showToast('⚠️ Network error');
+      setStatus('Deploy error: ' + e.message);
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
