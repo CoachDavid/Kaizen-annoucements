@@ -275,8 +275,13 @@
   const DEPLOY_URL = WORKER_URL + "/deploy";
 
   // Admin secret stored only in localStorage on this device — never in the file
-  function getToken() { try { return localStorage.getItem('cf_token') || ''; } catch(e) { return ''; } }
-  function saveToken(t) { try { localStorage.setItem('cf_token', t); } catch(e) {} }
+  function getToken() {
+    try { const t = localStorage.getItem('cf_token') || sessionStorage.getItem('cf_token') || ''; return t; } catch(e) { return ''; }
+  }
+  function saveToken(t) {
+    try { localStorage.setItem('cf_token', t); } catch(e) {}
+    try { sessionStorage.setItem('cf_token', t); } catch(e) {}
+  }
 
   let announcements = [];
 
