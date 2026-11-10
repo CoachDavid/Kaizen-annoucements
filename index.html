@@ -184,6 +184,20 @@
   .modal-cancel { background: none; color: var(--accent); font-size: 16px; padding: 4px 0; }
 
   #status-bar { font-size: 13px; color: var(--fg-muted); text-align: center; margin-bottom: 16px; }
+
+  .emoji-btn {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .emoji-btn:active { background: var(--border); }
+  .emoji-btn.emoji-none { font-size: 12px; font-weight: 600; color: var(--fg-muted); padding: 6px 10px; }
+  .emoji-btn.selected { border-color: var(--accent); background: var(--tag-active); }
 </style>
 </head>
 <body>
@@ -240,6 +254,14 @@
     <input type="hidden" id="edit-index" value="-1">
     <div class="form-group">
       <label>Message</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <button type="button" class="emoji-btn" onclick="insertEmoji('❌')">❌</button>
+        <button type="button" class="emoji-btn" onclick="insertEmoji('📢')">📢</button>
+        <button type="button" class="emoji-btn" onclick="insertEmoji('🏆')">🏆</button>
+        <button type="button" class="emoji-btn" onclick="insertEmoji('⛩️')">⛩️</button>
+        <button type="button" class="emoji-btn" onclick="insertEmoji('🤛')">🤛</button>
+        <button type="button" class="emoji-btn emoji-none" onclick="clearEmoji()">none</button>
+      </div>
       <textarea id="field-message" placeholder="📢 Dojo closed for Thanksgiving"></textarea>
     </div>
     <div class="form-group">
@@ -374,6 +396,7 @@
     document.getElementById('field-expires').value = d.toISOString().slice(0,10);
     document.getElementById('field-id').value = 'announcement-' + Date.now();
     document.getElementById('field-cancels').checked = false;
+    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('modal-overlay').classList.add('open');
     setTimeout(() => document.getElementById('field-message').focus(), 100);
   }
@@ -444,6 +467,32 @@
       showToast('⚠️ Network error');
       setStatus('Deploy error: ' + e.message);
     }
+  }
+
+  function insertEmoji(emoji) {
+    const ta = document.getElementById('field-message');
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const val = ta.value;
+    // If cursor is at start or field is empty, prepend; otherwise insert at cursor
+    if (start === 0 || val === '') {
+      ta.value = emoji + ' ' + val.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]️?\s*/u, '');
+    } else {
+      ta.value = val.slice(0, start) + emoji + val.slice(end);
+    }
+    // Highlight selected emoji button
+    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+    event.target.classList.add('selected');
+    ta.focus();
+  }
+
+  function clearEmoji() {
+    const ta = document.getElementById('field-message');
+    // Remove leading emoji if present
+    ta.value = ta.value.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]️?\s*/u, '').trimStart();
+    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+    event.target.classList.add('selected');
+    ta.focus();
   }
 
   function showToast(msg) {
