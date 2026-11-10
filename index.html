@@ -85,6 +85,8 @@
     margin-bottom: 12px;
   }
 
+  .card-expired { background: var(--tag-expired); }
+
   .announcement-row { display: flex; flex-direction: column; gap: 8px; }
   .announcement-message { font-size: 15px; font-weight: 500; line-height: 1.4; }
   .announcement-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -370,7 +372,7 @@
         : '<span class="tag tag-active">Active</span>';
       const cancelsTag = a.cancels ? '<span class="tag tag-cancels">Cancels Class</span>' : '';
       const expiresTag = a.expires ? `<span class="tag tag-expires">Expires ${a.expires}</span>` : '<span class="tag tag-expires">No expiry</span>';
-      return `<div class="card">
+      return `<div class="card${expired ? ' card-expired' : ''}">
         <div class="announcement-row">
           <div class="announcement-message">${escHtml(a.message)}</div>
           <div class="announcement-meta">${statusTag}${cancelsTag}${expiresTag}</div>
